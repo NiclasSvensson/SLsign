@@ -71,6 +71,9 @@ int main(int argc, char **argv) {
             x = canvas->width();  // Reset to start from right
             departures = getDepartures();
             strings = parseDepartures(departures);
+            if (strings.size() == 0) {
+                continue;
+            }
             movingText = "";
             int i = 0;
             for (auto e: strings) {
