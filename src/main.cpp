@@ -11,6 +11,32 @@ using namespace rgb_matrix;
 
 static volatile bool running = true;
 
+void DrawInfinity(Canvas *canvas, int x_offset, int y_offset, const Color &color) {
+    const char* pattern[] = {
+        "0011110000111100",
+        "0110011001100110",
+        "1100001111000011",
+        "1100000110000011",
+        "1100001111000011",
+        "0110011001100110",
+        "0011110000111100",
+    };
+
+    for (int y = 0; y < 7; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (pattern[y][x] == '1') {
+                int px = x + x_offset;
+                int py = y + y_offset;
+
+                if (px >= 0 && px < canvas->width() &&
+                    py >= 0 && py < canvas->height()) {
+                    canvas->SetPixel(px, py, color.r, color.g, color.b);
+                }
+            }
+        }
+    }
+}
+
 void SignalHandler(int) {
     running = false;
 }
@@ -45,11 +71,11 @@ int main(int argc, char **argv) {
 
     nlohmann::json departures = getDepartures();
     auto strings = parseDepartures(departures);
+
     std::string movingText = "";
     for (auto e: strings) {
         movingText += e[0] + " " + e[1] + "         ";
     }
-    //std::cout << movingText << std::endl;
 
     signal(SIGINT, SignalHandler);
     signal(SIGTERM, SignalHandler);
@@ -63,7 +89,8 @@ int main(int argc, char **argv) {
     while (running) {
         canvas->Clear();
         DrawText(canvas, font, 2, 13, orange, nextDestination);
-        DrawText(canvas, font, canvas->width() - font.CharacterWidth('H') * strlen(nextTime) - 1, 13, orange, nextTime);
+	if (strings[0][1] == "OO") DrawInfinity(canvas, canvas->width() - 16 - 5, 3, orange);
+        else DrawText(canvas, font, canvas->width() - font.CharacterWidth('H') * strlen(nextTime) - 1, 13, orange, nextTime);
         DrawText(canvas, font, x, 28, orange, rolling);
 
         x--; // Move text left
@@ -71,9 +98,6 @@ int main(int argc, char **argv) {
             x = canvas->width();  // Reset to start from right
             departures = getDepartures();
             strings = parseDepartures(departures);
-            if (strings.size() == 0) {
-                continue;
-            }
             movingText = "";
             int i = 0;
             for (auto e: strings) {
@@ -86,6 +110,7 @@ int main(int argc, char **argv) {
             nextDestination = strings[0][0].c_str();
             nextTime = strings[0][1].c_str();
             rolling = movingText.c_str();
+            text_width = font.CharacterWidth('H') * strlen(rolling); // Approximate width
         }
 
         usleep(20000); // Adjust speed: lower = faster

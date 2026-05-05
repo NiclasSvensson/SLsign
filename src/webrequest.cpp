@@ -38,7 +38,9 @@ std::vector<std::vector<std::string>> parseDepartures(const json& departuresJson
             }
         }
     }
-
+    if (result.size() == 0) {
+        result = {{"Wilma", "OO"}, {"SL API broken", "? min"}};
+    }
     return result;
 }
 
